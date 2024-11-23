@@ -1,0 +1,159 @@
+
+//filepath: array.hpp
+#pragma once
+
+#include <Arduino.h>
+
+template <typename T = byte>
+struct Array
+{
+    T *data = nullptr;
+    int size = 0;
+
+    // Constructor to initialize array
+    Array(int _size, T *_data) : size(_size), data(_data)
+    {
+    }
+
+    // Destructor
+    ~Array()
+    {
+        delete[] data;
+    }
+};
+
+//filepath: buffer.hpp
+#pragma once
+
+#include <Arduino.h>
+
+struct Buffer
+{
+    int size = 0;
+    byte *data;
+};
+
+//filepath: informations-uebertragung.ino
+#include <Arduino.h>
+#include "./array.hpp"
+#include "./pocket.hpp"
+#include "./node.hpp"
+
+// Corrected signal data initialization
+byte signaldata[] = {255, 0, 255, 123};
+
+// Updated Array initialization
+Array<byte> signal(sizeof(signaldata), signaldata);
+
+NodeMetaData nmp = {
+    13, // pin
+    signal,
+};
+
+Node node(nmp);
+
+void OnPocket(const Pocket &p)
+{
+  Serial.println("Pocket Received");
+}
+
+void setup()
+{
+  Serial.begin(9600); // Initialize Serial communication
+  node.onPocket = OnPocket;
+}
+
+void loop()
+{
+  node.update();
+}
+
+//filepath: node.hpp
+#pragma once
+
+#include <Arduino.h>
+#include "./array.hpp"
+#include "./pocket.hpp"
+
+struct NodeMetaData
+{
+    uint8_t pin;
+    Array<byte> signal;
+};
+
+struct Node
+{
+    NodeMetaData meta;
+
+    void (*onPocket)(const Pocket &p) = nullptr;
+
+    Node(NodeMetaData meta) : meta(meta)
+    {
+        pinMode(meta.pin, INPUT);
+    }
+
+    void update()
+    {
+    }
+};
+
+
+//filepath: pocket.hpp
+#pragma once
+
+#include <Arduino.h>
+
+#include "./buffer.hpp"
+
+#define HASHSIZE 4
+
+struct PocketMetadata
+{
+    int size = 0;
+    int id = rand();
+};
+
+struct Pocket
+{
+    Array<byte> data;
+    Array<byte> signal;
+    PocketMetadata pocketMetadata;
+
+    Pocket(Array<byte> _data, Array<byte> _signal, PocketMetadata _pocketMetadata) : data(_data),
+                                                                                     signal(_signal),
+                                                                                     pocketMetadata(_pocketMetadata)
+    {
+    }
+
+    Buffer getPocketBuffer()
+    {
+        int packageSize = signal.size + sizeof(PocketMetadata) + HASHSIZE + data.size + HASHSIZE;
+        byte *buff = new byte[packageSize];
+
+        int i = 0;
+        for (; i < signal.size; i++)
+        {
+            buff[i] = signal.data[i];
+        }
+        for (; i < signal.size + sizeof(PocketMetadata); i++)
+        {
+        }
+
+        Buffer buffer;
+        buffer.size = packageSize;
+        buffer.data = buff;
+
+        return buffer;
+    }
+
+    byte send(byte pin, int waitTime)
+    {
+        Buffer buffer = getPocketBuffer();
+        for (int i = 0; i < buffer.size; i++)
+        {
+            digitalWrite(pin, buffer.data[i]);
+            delay(waitTime);
+        }
+        delete[] buffer.data;
+    }
+};
