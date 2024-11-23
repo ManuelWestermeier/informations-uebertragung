@@ -1,3 +1,3 @@
 # informations übertragung 
 
-lines: 3874
+lines: 346

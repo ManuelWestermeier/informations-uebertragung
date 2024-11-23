@@ -2,24 +2,10 @@
 
 #include <Arduino.h>
 #include "./buffer.hpp"
+#include "./hash.hpp"
 
 #define HASHSIZE 4
 #define DEFAULT_WRITE_SPEED 20
-
-// A simple hash function
-void generateHash(const byte *data, int size, byte *hash)
-{
-    // Basic hash calculation (e.g., sum of bytes modulo 256 for simplicity)
-    uint32_t sum = 0;
-    for (int i = 0; i < size; i++)
-    {
-        sum += data[i];
-    }
-    hash[0] = (sum >> 24) & 0xFF; // MSB
-    hash[1] = (sum >> 16) & 0xFF;
-    hash[2] = (sum >> 8) & 0xFF;
-    hash[3] = sum & 0xFF; // LSB
-}
 
 struct PocketMetadata
 {
@@ -46,7 +32,7 @@ struct Pocket
 
         while (continueCallback && continueCallback())
         {
-            // Read signal data
+            // Read signal data at default write speed
             byte value = digitalRead(pin);
 
             if (signalIndex < signal.size)
@@ -74,15 +60,15 @@ struct Pocket
                     for (int j = 0; j < sizeof(PocketMetadata); j++)
                     {
                         metadataBuffer[j] = digitalRead(pin);
-                        delay(pocketMetadata.writeSpeed);
+                        delay(DEFAULT_WRITE_SPEED);
                     }
 
-                    // Validate metadata hash
+                    // Validate metadata hash at default write speed
                     byte metadataHash[HASHSIZE];
                     for (int j = 0; j < HASHSIZE; j++)
                     {
                         metadataHash[j] = digitalRead(pin);
-                        delay(pocketMetadata.writeSpeed);
+                        delay(DEFAULT_WRITE_SPEED);
                     }
 
                     byte computedHash[HASHSIZE];
@@ -98,7 +84,7 @@ struct Pocket
                     // Parse metadata
                     memcpy(&pocketMetadata, metadataBuffer, sizeof(PocketMetadata));
 
-                    // Read data
+                    // Read data at pocket's write speed
                     byte *dataBuffer = new byte[pocketMetadata.size];
                     for (int j = 0; j < pocketMetadata.size; j++)
                     {
@@ -106,12 +92,12 @@ struct Pocket
                         delay(pocketMetadata.writeSpeed);
                     }
 
-                    // Validate data hash
+                    // Validate data hash at default write speed
                     byte dataHash[HASHSIZE];
                     for (int j = 0; j < HASHSIZE; j++)
                     {
                         dataHash[j] = digitalRead(pin);
-                        delay(pocketMetadata.writeSpeed);
+                        delay(DEFAULT_WRITE_SPEED);
                     }
 
                     generateHash(dataBuffer, pocketMetadata.size, computedHash);
@@ -135,54 +121,53 @@ struct Pocket
                 }
             }
 
-            delay(pocketMetadata.writeSpeed);
+            delay(DEFAULT_WRITE_SPEED);
         }
 
         return false; // Should never reach this point
     }
 
-    // In pocket.hpp
     void send(byte pin) const
     {
-        // Send the signal first
+        // Send the signal at default write speed
         for (int i = 0; i < signal.size; i++)
         {
             digitalWrite(pin, signal.data[i]);
-            delay(pocketMetadata.writeSpeed);
+            delay(DEFAULT_WRITE_SPEED);
         }
 
-        // Serialize metadata and send it
+        // Serialize metadata and send it at default write speed
         byte metadataBuffer[sizeof(PocketMetadata)];
         memcpy(metadataBuffer, &pocketMetadata, sizeof(PocketMetadata));
         for (int i = 0; i < sizeof(PocketMetadata); i++)
         {
             digitalWrite(pin, metadataBuffer[i]);
-            delay(pocketMetadata.writeSpeed);
+            delay(DEFAULT_WRITE_SPEED);
         }
 
-        // Send metadata hash
+        // Send metadata hash at default write speed
         byte metadataHash[HASHSIZE];
         generateHash(metadataBuffer, sizeof(PocketMetadata), metadataHash);
         for (int i = 0; i < HASHSIZE; i++)
         {
             digitalWrite(pin, metadataHash[i]);
-            delay(pocketMetadata.writeSpeed);
+            delay(DEFAULT_WRITE_SPEED);
         }
 
-        // Send the data
+        // Send the data at pocket's write speed
         for (int i = 0; i < data.size; i++)
         {
             digitalWrite(pin, data.data[i]);
             delay(pocketMetadata.writeSpeed);
         }
 
-        // Send data hash
+        // Send data hash at default write speed
         byte dataHash[HASHSIZE];
         generateHash(data.data, data.size, dataHash);
         for (int i = 0; i < HASHSIZE; i++)
         {
             digitalWrite(pin, dataHash[i]);
-            delay(pocketMetadata.writeSpeed);
+            delay(DEFAULT_WRITE_SPEED);
         }
     }
 };

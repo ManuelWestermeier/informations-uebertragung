@@ -3,28 +3,40 @@
 
 #define IS_SENDING true
 
-void handlePocket(const Pocket &p) { Serial.println("Pocket received!"); }
-bool continueReading() { return true; }
+void handlePocket(const Pocket &p) {
+  Serial.println("Pocket received!");
+  Serial.print("Data: ");
+  for (int i = 0; i < p.data.size; i++) {
+    Serial.print(p.data.data[i]);
+  }
+  Serial.println();
+}
 
-void setup()
-{
-    Serial.begin(9600);
+bool continueReading() {
+  return true;
+}
 
-    Node node({
-        .pin = 13,
-        .signal = Array<byte>(4, new byte[4]{255, 0, 255, 123}),
-    });
+void setup() {
+  Serial.begin(9600);
 
-    node.onPocket = handlePocket;
-    node.continueCallback = continueReading;
+  Node node({
+    .pin = 13,
+    .signal = Array<byte>(4, new byte[4]{ 255, 0, 255, 123 }),
+  });
+
+  node.onPocket = handlePocket;
+  node.continueCallback = continueReading;
+
+  // data to send
+  Buffer buffer;
+  buffer.size = 3;
+  buffer.data = "HEY";
 
 #if IS_SENDING
-    node.send(Pocket(
-        Array<byte>(3, new byte[3]{42, 43, 44}),
-        node.meta.signal,
-        PocketMetadata()));
+  delay(500);
+  node.send(buffer);
 #else
-    node.update();
+  node.update();
 #endif
 }
 

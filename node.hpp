@@ -25,7 +25,7 @@ struct Node
     void update()
     {
         byte placeholderData[1] = {0}; // Create a placeholder byte array
-        
+
         Pocket pocket{
             Array<byte>(1, placeholderData), // Initialize data array
             meta.signal,
@@ -46,12 +46,17 @@ struct Node
         }
     }
 
-    bool send(const Pocket &pocket)
+    bool send(const Buffer &buffer)
     {
         // Pin must be set to OUTPUT for sending
         pinMode(meta.pin, OUTPUT);
 
-        // Use the Pocket's send method
+        Pocket pocket{
+            Array<byte>(buffer.size, buffer.data),
+            meta.signal,
+            PocketMetadata(),
+        };
+
         pocket.send(meta.pin);
 
         // Restore pin to INPUT mode after sending
