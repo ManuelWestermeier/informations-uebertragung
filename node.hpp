@@ -15,6 +15,7 @@ struct Node
     NodeMetaData meta;
 
     void (*onPocket)(const Pocket &p) = nullptr;
+    void (*continueCallback)(const Pocket &p) = nullptr;
 
     Node(NodeMetaData meta) : meta(meta)
     {
@@ -23,5 +24,37 @@ struct Node
 
     void update()
     {
+        byte placeholderData[1] = {0}; // Create a placeholder byte array
+        Pocket pocket(
+            Array<byte>(1, placeholderData), // Initialize data array
+            meta.signal,
+            PocketMetadata());
+
+        // Assign the continue callback
+        pocket.continueCallback = continueCallback;
+
+        // Attempt to read a Pocket from the input pin
+        if (pocket.read(meta.pin))
+        {
+            // If successfully read, trigger the onPocket handler if set
+            if (onPocket)
+            {
+                onPocket(pocket);
+            }
+        }
+    }
+
+    bool send(const Pocket &pocket)
+    {
+        // Pin must be set to OUTPUT for sending
+        pinMode(meta.pin, OUTPUT);
+
+        // Use the Pocket's send method
+        pocket.send(meta.pin);
+
+        // Restore pin to INPUT mode after sending
+        pinMode(meta.pin, INPUT);
+
+        return true; // Indicate successful send
     }
 };

@@ -5,5 +5,5 @@
 struct Buffer
 {
     int size = 0;
-    byte *data;
+    byte *data = nullptr; // Ensure data is initialized to nullptr
 };

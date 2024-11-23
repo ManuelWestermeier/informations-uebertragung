@@ -8,14 +8,30 @@ struct Array
     T *data = nullptr;
     int size = 0;
 
-    // Constructor to initialize array
-    Array(int _size, T *_data) : size(_size), data(_data)
+    // Default Constructor
+    Array() = default;
+
+    // In array.hpp
+    Array(int _size, T *_data = nullptr) : size(_size)
     {
+        if (_data)
+        {
+            data = new T[_size];
+            memcpy(data, _data, _size * sizeof(T));
+        }
+        else
+        {
+            data = nullptr;
+        }
     }
 
     // Destructor
     ~Array()
     {
-        delete[] data;
+        if (data)
+        {
+            delete[] data;
+            data = nullptr;
+        }
     }
 };
