@@ -15,7 +15,7 @@ struct Node
     NodeMetaData meta;
 
     void (*onPocket)(const Pocket &p) = nullptr;
-    void (*continueCallback)(const Pocket &p) = nullptr;
+    bool (*continueCallback)() = nullptr;
 
     Node(NodeMetaData meta) : meta(meta)
     {
@@ -25,10 +25,12 @@ struct Node
     void update()
     {
         byte placeholderData[1] = {0}; // Create a placeholder byte array
-        Pocket pocket(
+        
+        Pocket pocket{
             Array<byte>(1, placeholderData), // Initialize data array
             meta.signal,
-            PocketMetadata());
+            PocketMetadata(),
+        };
 
         // Assign the continue callback
         pocket.continueCallback = continueCallback;

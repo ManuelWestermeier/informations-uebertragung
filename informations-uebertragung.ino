@@ -1,50 +1,31 @@
 #include <Arduino.h>
 #include "./node.hpp"
 
-// Callback to handle received pockets
-void handlePocket(const Pocket &p)
-{
-    Serial.println("Pocket received!");
-}
+#define IS_SENDING true
 
-// Callback for custom behavior during the reading process
-void continueReading(const Pocket &p)
-{
-    Serial.println("Reading in progress...");
-    delay(10); // Simulated work
-}
+void handlePocket(const Pocket &p) { Serial.println("Pocket received!"); }
+bool continueReading() { return true; }
 
 void setup()
 {
     Serial.begin(9600);
 
-    // Define the signal array
-    byte signalData[] = {255, 0, 255, 123};
-    Array<byte> signal(sizeof(signalData), signalData);
-
-    // Define data to send
-    byte dataToSend[] = {42, 43, 44};
-    Array<byte> data(sizeof(dataToSend), dataToSend);
-
-    // Initialize Node metadata
-    NodeMetaData nodeMeta = {
+    Node node({
         .pin = 13,
-        .signal = signal};
+        .signal = Array<byte>(4, new byte[4]{255, 0, 255, 123}),
+    });
 
-    // Create a Node instance
-    Node node(nodeMeta);
-
-    // Set callbacks
     node.onPocket = handlePocket;
     node.continueCallback = continueReading;
 
-    // Simulate sending a pocket
-    Pocket pocketToSend(data, signal, PocketMetadata());
-    node.send(pocketToSend);
+#if IS_SENDING
+    node.send(Pocket(
+        Array<byte>(3, new byte[3]{42, 43, 44}),
+        node.meta.signal,
+        PocketMetadata()));
+#else
+    node.update();
+#endif
 }
 
-void loop()
-{
-    // Simulate reading updates in the loop
-    // Node node.update() should be called to check for incoming pockets
-}
+void loop() {}

@@ -34,8 +34,7 @@ struct Pocket
     Array<byte> signal;
     PocketMetadata pocketMetadata;
 
-    // Callback to decide whether to continue reading
-    void (*continueCallback)(const Pocket &p) = nullptr;
+    bool (*continueCallback)() = nullptr;
 
     Pocket(Array<byte> _data, Array<byte> _signal, PocketMetadata _pocketMetadata)
         : data(_data), signal(_signal), pocketMetadata(_pocketMetadata) {}
@@ -45,14 +44,8 @@ struct Pocket
         byte receivedSignal[signal.size];
         int signalIndex = 0;
 
-        while (true)
+        while (continueCallback && continueCallback())
         {
-            // Call the continue callback if set
-            if (continueCallback)
-            {
-                continueCallback(*this);
-            }
-
             // Read signal data
             byte value = digitalRead(pin);
 
@@ -80,10 +73,6 @@ struct Pocket
                     byte metadataBuffer[sizeof(PocketMetadata)];
                     for (int j = 0; j < sizeof(PocketMetadata); j++)
                     {
-                        if (continueCallback)
-                        {
-                            continueCallback(*this);
-                        }
                         metadataBuffer[j] = digitalRead(pin);
                         delay(pocketMetadata.writeSpeed);
                     }
@@ -92,10 +81,6 @@ struct Pocket
                     byte metadataHash[HASHSIZE];
                     for (int j = 0; j < HASHSIZE; j++)
                     {
-                        if (continueCallback)
-                        {
-                            continueCallback(*this);
-                        }
                         metadataHash[j] = digitalRead(pin);
                         delay(pocketMetadata.writeSpeed);
                     }
@@ -117,10 +102,6 @@ struct Pocket
                     byte *dataBuffer = new byte[pocketMetadata.size];
                     for (int j = 0; j < pocketMetadata.size; j++)
                     {
-                        if (continueCallback)
-                        {
-                            continueCallback(*this);
-                        }
                         dataBuffer[j] = digitalRead(pin);
                         delay(pocketMetadata.writeSpeed);
                     }
@@ -129,10 +110,6 @@ struct Pocket
                     byte dataHash[HASHSIZE];
                     for (int j = 0; j < HASHSIZE; j++)
                     {
-                        if (continueCallback)
-                        {
-                            continueCallback(*this);
-                        }
                         dataHash[j] = digitalRead(pin);
                         delay(pocketMetadata.writeSpeed);
                     }
